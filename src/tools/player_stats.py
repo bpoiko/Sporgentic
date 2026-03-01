@@ -1,7 +1,9 @@
 from nba_api.stats.endpoints import playercareerstats
 from nba_api.stats.static import players
-
-def statsLookup(player_name):
+from langchain.tools import tool
+@tool
+def statsLookup(player_name: str) -> str:
+    """"Check the last 3 seasons worth of stats of an NBA player by their full name"""
     player_list = players.find_players_by_full_name(player_name)
     if not player_list:
         raise ValueError(f"Player {player_name}, not found")
@@ -10,5 +12,5 @@ def statsLookup(player_name):
 
     info = playercareerstats.PlayerCareerStats(player_id=player_id)
     df = info.get_data_frames()[0]
-    return df.sort_values("SEASON_ID").tail(3) # 3 most recent seasons
+    return str(df.sort_values("SEASON_ID").tail(3)) # 3 most recent seasons
 

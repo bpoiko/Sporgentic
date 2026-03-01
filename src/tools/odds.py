@@ -4,7 +4,7 @@ from datetime import datetime, timezone, timedelta
 from dotenv import load_dotenv
 from nba_api.stats.static import players
 from nba_api.stats.endpoints import commonplayerinfo
-
+from langchain.tools import tool
 load_dotenv()
 odds_key = os.getenv("ODDS_KEY")
 
@@ -13,8 +13,10 @@ SPORT = "basketball_nba"
 REGIONS = "us"
 MARKETS = "player_points"
 
-
-def oddsFetcher(player_name):
+@tool
+def oddsFetcher(player_name: str) -> str:
+    """Fetch today's betting odds, and player props for an NBA player by their full name
+    ."""
     # Step 1: Resolve player name → team via nba_api
     player_list = players.find_players_by_full_name(player_name)
     if not player_list:
@@ -86,10 +88,10 @@ def oddsFetcher(player_name):
     if not player_odds:
         return {"message": f"No props found for {player_name} today."}
 
-    return {
+    return str({
         "player": player_name,
         "team": full_team_name,
         "opponent": opponent,
         "game_time": target_event["commence_time"],
         "odds": player_odds,
-    }
+    })

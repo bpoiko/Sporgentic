@@ -1,10 +1,11 @@
 from nbainjuries import injury
 from nba_api.stats.static import players
 from datetime import datetime
+from langchain.tools import tool
 
-
-
-def injuryCheck(player_name):
+@tool
+def injuryCheck(player_name: str) -> str:
+    """Check the injury status of a NBA player by their full name"""
     # Validate the player exists before hitting any report
     player_list = players.find_players_by_full_name(player_name)
     if not player_list:
@@ -30,10 +31,10 @@ def injuryCheck(player_name):
         }
 
     row = match.iloc[0]
-    return {
+    return str({
         "player": player_name,
         "status": row["Current Status"],   # Out / Questionable / Available
         "reason": row["Reason"],
         "game": row["Matchup"],
         "game_time": row["Game Time"],
-    }
+    })
