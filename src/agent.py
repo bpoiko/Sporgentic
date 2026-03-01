@@ -64,8 +64,8 @@ if __name__ == "__main__":
                     live.update(Spinner("dots", text=Text(f" {label}...", style="yellow")))
 
             # Collect all agent messages
-            if "agent" in chunk:
-                msgs = chunk["agent"].get("messages", [])
+            if "model" in chunk:
+                msgs = chunk["model"].get("messages", [])
                 all_agent_messages.extend(msgs)
                 live.update(Spinner("dots", text=Text(" Thinking...", style="cyan")))
 
