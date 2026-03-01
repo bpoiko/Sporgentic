@@ -16,6 +16,7 @@ langgraph-checkpoint==4.0.1
 langgraph-prebuilt==1.0.8
 langgraph-sdk==0.3.9
 langsmith==0.7.9
+nba_api==1.11.4
 numpy==2.4.2
 ollama==0.6.1
 orjson==3.11.7
