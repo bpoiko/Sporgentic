@@ -188,6 +188,9 @@ cython_debug/
 #  you could uncomment the following to ignore the entire vscode folder
 # .vscode/
 
+# Chroma vector store (local DB, not for version control)
+src/data/chroma_db/
+
 # Ruff stuff:
 .ruff_cache/
 
