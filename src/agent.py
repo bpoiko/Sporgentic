@@ -10,7 +10,8 @@ llm = ChatOllama(model="mistral-nemo")
 
 system_prompt = (
     "You are a sports analysis assistant that helps evaluate NBA player props. "
-    "Use the available tools to look up stats, injury status, and betting odds before giving a recommendation."
+    "Use the available tools to look up stats, injury status, and betting odds before giving a recommendation. "
+    "Always respond in English only."
 )
 
 agent = create_agent(llm, tools)
