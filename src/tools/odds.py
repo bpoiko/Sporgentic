@@ -49,7 +49,7 @@ def oddsFetcher(player_name: str) -> str:
             break
 
     if not target_event:
-        return {"message": f"{full_team_name} is not playing today. Skipping odds call."}
+        return str({"message": f"{full_team_name} is not playing today. Skipping odds call."})
 
     # Step 3: Pull player props for that specific game only
     event_id = target_event["id"]
@@ -86,7 +86,7 @@ def oddsFetcher(player_name: str) -> str:
                     })
 
     if not player_odds:
-        return {"message": f"No props found for {player_name} today."}
+        return str({"message": f"No props found for {player_name} today."})
 
     return str({
         "player": player_name,

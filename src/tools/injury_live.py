@@ -15,20 +15,20 @@ def injuryCheck(player_name: str) -> str:
     try:
         df = injury.get_reportdata(datetime.now(), return_df=True)
     except Exception as e:
-        return {"error": f"Could not fetch injury report: {e}"}
+        return str({"error": f"Could not fetch injury report: {e}"})
 
     if df is None or df.empty:
-        return {"message": "No injury report available right now. Check back closer to game time."}
+        return str({"message": "No injury report available right now. Check back closer to game time."})
 
     # Filter down to just this player
     match = df[df["Player Name"].str.lower() == player_name.lower()]
 
     if match.empty:
-        return {
+        return str({
             "player": player_name,
             "status": "Available",
             "reason": "Not listed on today's injury report",
-        }
+        })
 
     row = match.iloc[0]
     return str({
