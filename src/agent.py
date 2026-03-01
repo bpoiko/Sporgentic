@@ -52,6 +52,7 @@ if __name__ == "__main__":
     console.print()
 
     final_answer = ""
+    all_agent_messages = []
 
     with Live(console=console, refresh_per_second=10) as live:
         for chunk in agent.stream({"messages": [("human", user_qn)]}):
@@ -62,13 +63,23 @@ if __name__ == "__main__":
                     label = TOOL_LABELS.get(tool_name, f"Running {tool_name}")
                     live.update(Spinner("dots", text=Text(f" {label}...", style="yellow")))
 
-            # Agent thinking / final response
+            # Collect all agent messages
             if "agent" in chunk:
-                for msg in chunk["agent"].get("messages", []):
-                    content = getattr(msg, "content", "")
-                    if content:
-                        final_answer = content
-                        live.update(Spinner("dots", text=Text(" Thinking...", style="cyan")))
+                msgs = chunk["agent"].get("messages", [])
+                all_agent_messages.extend(msgs)
+                live.update(Spinner("dots", text=Text(" Thinking...", style="cyan")))
+
+    # Extract final answer from the last non-empty agent message
+    for msg in reversed(all_agent_messages):
+        content = getattr(msg, "content", "")
+        if isinstance(content, str) and content:
+            final_answer = content
+            break
+        elif isinstance(content, list):
+            text = " ".join(c.get("text", "") for c in content if isinstance(c, dict) and c.get("type") == "text")
+            if text:
+                final_answer = text
+                break
 
     console.print(Panel(
         final_answer,
