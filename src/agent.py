@@ -14,7 +14,7 @@ system_prompt = (
     "Always respond in English only."
 )
 
-agent = create_agent(llm, tools)
+agent = create_agent(llm, tools, system_prompt=system_prompt)
 
 if __name__ == "__main__":
     user_qn = input("Ask me about a player: ")
