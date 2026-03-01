@@ -1,38 +1,95 @@
 import requests
 import os
+from datetime import datetime, timezone, timedelta
 from dotenv import load_dotenv
 from nba_api.stats.static import players
 from nba_api.stats.endpoints import commonplayerinfo
+
 load_dotenv()
 odds_key = os.getenv("ODDS_KEY")
-"""Note to self so I can dev this in the morning
-This will work in a way where we cant look up a sole players props
-Solution, filter the results so we can have that player and that player only
-SO; get props;filter for that respective player; then decide
-"""
+
+BASE_URL = "https://api.the-odds-api.com/v4"
+SPORT = "basketball_nba"
+REGIONS = "us"
+MARKETS = "player_points"
+
+
 def oddsFetcher(player_name):
-    # use it
+    # Step 1: Resolve player name → team via nba_api
     player_list = players.find_players_by_full_name(player_name)
     if not player_list:
-        raise ValueError("player not found")
-    else:
-        p_id = player_list[0]['id']
-        needed_info = commonplayerinfo.CommonPlayerInfo(p_id)
-        df = needed_info.get_data_frames()[0]
-        team_name = df['TEAM_NAME'][0]
-        team_id = df['TEAM_ID'][0]
-        # has to be an nba player for now..
-        REGIONS = 'us'
-        markets = 'player_points'
-        sport = 'basketball_nba'
-    
-    player_respective_odds = requests.get(
-        f'https://api.the-odds-api.com/v4/sports/{sport}/odds',
+        raise ValueError(f"Player '{player_name}' not found")
+
+    player_id = player_list[0]["id"]
+    df = commonplayerinfo.CommonPlayerInfo(player_id).get_data_frames()[0]
+    full_team_name = f"{df['TEAM_CITY'][0]} {df['TEAM_NAME'][0]}"  # e.g. "Los Angeles Lakers"
+
+    # Step 2: Guard rail — check if the team is playing today before spending API calls
+    now = datetime.now(timezone.utc)
+    today_start = now.strftime("%Y-%m-%dT00:00:00Z")
+    today_end = (now + timedelta(days=1)).strftime("%Y-%m-%dT00:00:00Z")
+
+    events_resp = requests.get(
+        f"{BASE_URL}/sports/{SPORT}/events",
         params={
-            'api-key' : odds_key,
-            'regions' : REGIONS,
-            'markets' : markets,
-            
-        }
+            "apiKey": odds_key,
+            "commenceTimeFrom": today_start,
+            "commenceTimeTo": today_end,
+        },
     )
-    pass
+    events_resp.raise_for_status()
+    events = events_resp.json()
+
+    target_event = None
+    for event in events:
+        if full_team_name in (event["home_team"], event["away_team"]):
+            target_event = event
+            break
+
+    if not target_event:
+        return {"message": f"{full_team_name} is not playing today. Skipping odds call."}
+
+    # Step 3: Pull player props for that specific game only
+    event_id = target_event["id"]
+    opponent = (
+        target_event["away_team"]
+        if full_team_name == target_event["home_team"]
+        else target_event["home_team"]
+    )
+
+    odds_resp = requests.get(
+        f"{BASE_URL}/sports/{SPORT}/events/{event_id}/odds",
+        params={
+            "apiKey": odds_key,
+            "regions": REGIONS,
+            "markets": MARKETS,
+            "oddsFormat": "american",
+        },
+    )
+    odds_resp.raise_for_status()
+    odds_data = odds_resp.json()
+
+    # Step 4: Filter outcomes to just this player via the description field
+    player_odds = []
+    for bookmaker in odds_data.get("bookmakers", []):
+        for market in bookmaker.get("markets", []):
+            for outcome in market.get("outcomes", []):
+                if outcome.get("description", "").lower() == player_name.lower():
+                    player_odds.append({
+                        "bookmaker": bookmaker["title"],
+                        "market": market["key"],
+                        "name": outcome["name"],   # "Over" or "Under"
+                        "line": outcome.get("point"),
+                        "price": outcome["price"],
+                    })
+
+    if not player_odds:
+        return {"message": f"No props found for {player_name} today."}
+
+    return {
+        "player": player_name,
+        "team": full_team_name,
+        "opponent": opponent,
+        "game_time": target_event["commence_time"],
+        "odds": player_odds,
+    }

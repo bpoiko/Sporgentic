@@ -9,6 +9,6 @@ def statsLookup(player_name):
     player_id = player_list[0]['id']
 
     info = playercareerstats.PlayerCareerStats(player_id=player_id)
-    return info.get_data_frames()[0]
-
+    df = info.get_data_frames()[0]
+    return df.sort_values("SEASON_ID").tail(3) # 3 most recent seasons
 
