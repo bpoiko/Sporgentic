@@ -48,7 +48,7 @@ if __name__ == "__main__":
     ))
     console.print()
 
-    user_qn = console.input("[bold white]Ask me about a player:[/bold cyan] ")
+    user_qn = console.input("[bold white]Ask me about a player:[/bold white] ")
     console.print()
 
     final_answer = ""
